@@ -27,6 +27,12 @@ def generate_key(duration_days):
         "expiry_date": (datetime.now() + timedelta(days=duration_days)).isoformat(),
         "used_by": None
     }
+# Example code - paste your actual key_utils.py content here
+def generate_key():
+    return "demo-generated-key"
+
+def check_key_valid(key):
+    return key == "demo-generated-key"
     
     save_keys(keys)
     return key
