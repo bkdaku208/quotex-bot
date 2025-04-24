@@ -80,45 +80,33 @@ def user_use_key(message):
 # --- Signal Logic ---
 
 def get_otc_signal():
-    """
-    Generate a random OTC signal. Replace this with real data fetching if available.
-    """
     pair = random.choice(VALID_OTC_PAIRS)
     direction = random.choice(["CALL", "PUT"])
     confidence = random.randint(70, 95)
     return pair, direction, confidence
 
 def safe_entry_signal(chat_id, pair):
-    """
-    Send a follow-up message indicating a trade win.
-    """
-    # Corrected message using HTML parse mode
     msg = "🟢 Trade win! You can send feedback on my DM <a href='https://t.me/Zoya_Qt'>@Zoya_Qt</a>"
     try:
         bot.send_message(chat_id, msg, parse_mode='HTML')
     except telebot.apihelper.ApiTelegramException as e:
         print(f"Error sending message: {e}")
+
 @bot.message_handler(commands=['nextsignal'])
 def next_signal(message):
-    """
-    Generate and send the next OTC trading signal.
-    """
     current_time = datetime.now()
     last_request = user_last_request.get(message.from_user.id, None)
 
-    # Prevent spamming signals (60s cooldown)
     if last_request and (current_time - last_request).seconds < 60:
         bot.reply_to(message, "⏳ Please wait before requesting another signal.")
         return
 
-    # Check if user has access
     if not user_access.get(message.from_user.id):
         bot.reply_to(message, "You do not have access. Please activate your access key using /usekey <yourkey>.")
         return
 
     user_last_request[message.from_user.id] = current_time
 
-    # Generate signal
     pair, direction, confidence = get_otc_signal()
     start_time = datetime.now()
     end_time = start_time + timedelta(minutes=1)
@@ -128,16 +116,15 @@ def next_signal(message):
         f"🔸 Direction: *{direction}*\n"
         f"🔸 Confidence: *{confidence}%*\n"
         f"⏱ Trade Start: *{start_time.strftime('%H:%M:%S')}*\n"
-        f"⏱ Trade End: *{end_time.strftime('%H:%M:%S')}*\n"
-       
+        f"⏱ Trade End: *{end_time.strftime('%H:%M:%S')}*"
     )
     bot.send_message(message.chat.id, msg, parse_mode='Markdown')
 
-    # "SAFE ENTRY" follow-up after 60 seconds
     threading.Timer(60, safe_entry_signal, args=[message.chat.id, pair]).start()
 
 # --- Main ---
-
 if __name__ == "__main__":
     print("Bot is running...")
-    bot.polling()
+    threading.Thread(target=bot.polling, daemon=True).start()
+    run_server()
+    
